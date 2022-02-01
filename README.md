@@ -1,3 +1,12 @@
+[![Documentation Status](https://readthedocs.org/projects/searchpv/badge/?version=stable)](https://searchpv.readthedocs.io/en/stable/?badge=stable)
+[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://github.com/WenjinGudaisy/SearcHPV/blob/main/LICENSE)
+[![PyPI version](https://badge.fury.io/py/searcHPV.svg)](https://badge.fury.io/py/searcHPV)
+</br> 
+
+|Host | Downloads |
+|:----|:---------:|
+|PyPI | [![Downloads](https://pepy.tech/badge/searchpv)](https://pepy.tech/project/searchpv)
+
 # SearcHPV
 An HPV integration point detection tool for targeted capture sequencing data
 
@@ -8,31 +17,59 @@ An HPV integration point detection tool for targeted capture sequencing data
 ## Getting started
 1. Required resources
 * Unix like environment
-* Third-party tools:
-```
-Python/3.7.3 https://www.python.org/downloads/release/python-373/
-samtools/1.5 https://github.com/samtools/samtools/releases/tag/1.5
-BWA/0.7.15-r1140 https://github.com/lh3/bwa/releases/tag/v0.7.15
-java/1.8.0_252 https://www.oracle.com/java/technologies/javase/8all-relnotes.html
-Picard Tools/2.23.8 https://github.com/broadinstitute/picard/releases/tag/2.23.8
-PEAR/0.9.2 https://github.com/tseemann/PEAR
-CAP3/02/10/15 http://seq.cs.iastate.edu/cap3.html
 
-```
-After intalling these tools, please make sure that their path have been added to you ".bashrc" script so that you can use them by typing the tool names in the terminal.
 
 2. Download and install
 Firstly, download and install the required resources.
-Then, tap these commands in your terminal:
-```
-pip install searcHPV
+    1) Download Anaconda >=4.11.0: https://docs.conda.io/projects/conda/en/latest/user-guide/install/linux.html#install-linux-silent
 
-```
+    2) Download the "environment.yaml" file under this repository
+
+    3) Creat conda environment for SearcHPV:
+        ```
+        conda env create -f [your_path]/environment.yaml
+
+        ```
+        This command will automatically set up all the third-party tools and packages required for SearcHPV and install latest version of SearcHPV. The name of the environment is "searcHPV".
+
+        You can check the packages and tools in this environment by:
+
+        ```
+        conda list -n searcHPV
+
+        ```
+
+        You can update the environment by:
+        ```
+        conda env update -f [your_path]/environment.yaml
+
+        ```
+
+
 
 3. Usage
+
 SearcHPV have four main steps. You could either run it start-to-finish or run it step-by-step.
 
-* Usage:
+* Before running SearcHPV, active the conda environment:
+
+```
+conda activate searcHPV
+
+```
+
+If you are running commands in a bash script, start with:
+
+```
+#!/bin/bash
+source ~/anaconda3/etc/profile.d/conda.sh;
+conda activate searcHPV; 
+#[searcHPV commands...]
+```
+Note: Please check your path of "conda.sh" if you did not install Anaconda in the home directory.
+
+* Usage of searcHPV:
+
 ```
 searcHPV <options> ...
 ```
@@ -52,23 +89,57 @@ searcHPV <options> ...
 -genomeFusion   call the genome fusion points, step2
 -assemble local assemble for each integration event, step3
 -hpvFusion call the HPV fusion points, step4
+-clusterWindow <int> the length of window of clustering integration sites,default=100
+-gz             if fastq files are in gz format
+-poly(dn) N     poly(n), n*d(A/T/C/G), will report low confidence if contig contains poly(n), default=20
+-index          index the original human and virus reference files, default=False
+```
+
+Note: If you've already indexed the virus and human reference files for BWA, Samtools, Picard, you do not need to add the "-index" option, especailly when you are running for a batch of samples that share the same virus and human reference files and you do not want to spend time on indexing references every time running a sample. The commands for indexing the virus and human reference files:
 
 ```
-* Examples:
-1) Run it start-to-finish:
+#activate SearcHPV conda environment first to make sure using the correct versions of tools
+ref = '[path_of_your_reference_file]'
+bwa index {ref}
+samtools faidx {ref}
+picard CreateSequenceDictionary R={ref} O={ref.replace('.fa','.dict')
 ```
-searcHPV -fastq1 Sample_81279.R1.fastq.gz -fastq2 Sample_81279.R2.fastq.gz -humRef hs37d5.fa -virRef HPV.fa -output /home/scratch/HPV_fusion/Sample_81279
 
-```
-2) Run it step-by-step:
-```
-searchHPV -align -fastq1 Sample_81279.R1.fastq.gz -fastq2 Sample_81279.R2.fastq.gz -humRef hs37d5.fa -virRef HPV.fa -output /home/scratch/HPV_fusion/Sample_81279
-searchHPV -genomeFusion -fastq1 Sample_81279.R1.fastq.gz -fastq2 Sample_81279.R2.fastq.gz -humRef hs37d5.fa -virRef HPV.fa -output /home/scratch/HPV_fusion/Sample_81279
-searchHPV -assemble -fastq1 Sample_81279.R1.fastq.gz -fastq2 Sample_81279.R2.fastq.gz -humRef hs37d5.fa -virRef HPV.fa -output /home/scratch/HPV_fusion/Sample_81279
-searchHPV -hpvFusion -fastq1 Sample_81279.R1.fastq.gz -fastq2 Sample_81279.R2.fastq.gz -humRef hs37d5.fa -virRef HPV.fa -output /home/scratch/HPV_fusion/Sample_81279
 
-```
-Note: if run it step-by-step, please make sure the output directories for all steps are the same.
+4. Examples:
+
+    1) Run it start-to-finish and submit a SBATCH job:
+        ```
+        #!/bin/bash
+        #SBATCH --job-name=searcHPV
+        #SBATCH --mail-user=wenjingu@umich.edu
+        #SBATCH --mail-type=BEGIN,END
+        #SBATCH --cpus-per-task=1
+        #SBATCH --nodes=1
+        #SBATCH --ntasks-per-node=8
+        #SBATCH --mem=40gb
+        #SBATCH --time=100:00:00
+        #SBATCH --account=XXXXX
+        #SBATCH --partition=standard
+        #SBATCH --output=searcHPV.log
+        #SBATCH --error=searcHPV.err
+        source ~/anaconda3/etc/profile.d/conda.sh;
+        conda activate searcHPV;      
+        searcHPV -fastq1 Sample_81279.R1.fastq.gz -fastq2 Sample_81279.R2.fastq.gz -humRef hs37d5.fa -virRef HPV.fa -output /home/scratch/HPV_fusion/Sample_81279 -gz -index;
+        ```
+
+
+    2) Run it step-by-step:
+
+
+        ```
+        searchHPV -alignment -fastq1 Sample_81279.R1.fastq.gz -fastq2 Sample_81279.R2.fastq.gz -humRef hs37d5.fa -virRef HPV.fa -output /home/scratch/HPV_fusion/Sample_81279 -gz -index
+        searchHPV -genomeFusion -fastq1 Sample_81279.R1.fastq.gz -fastq2 Sample_81279.R2.fastq.gz -humRef hs37d5.fa -virRef HPV.fa -output /home/scratch/HPV_fusion/Sample_81279 -gz
+        searchHPV -assemble -fastq1 Sample_81279.R1.fastq.gz -fastq2 Sample_81279.R2.fastq.gz -humRef hs37d5.fa -virRef HPV.fa -output /home/scratch/HPV_fusion/Sample_81279 -gz
+        searchHPV -hpvFusion -fastq1 Sample_81279.R1.fastq.gz -fastq2 Sample_81279.R2.fastq.gz -humRef hs37d5.fa -virRef HPV.fa -output /home/scratch/HPV_fusion/Sample_81279 -gz
+
+        ```
+        Note: if run it step-by-step, please make sure the output directories for all steps are the same.
 
 ## Output
 1. Alignment: the marked dupliaction alignment bam file and customized reference genome.\\
@@ -80,7 +151,7 @@ summary of all the integration events : "HPVfusionPointContig.txt"
 contig sequences for all the integration events: "ContigsSequence.fa"
 
 ## Citation
-SearcHPV: a novel approach to identify and assemble human papillomavirus-host genomic integration events in cancer --- In progress
+SearcHPV: a novel approach to identify and assemble human papillomavirus-host genomic integration events in cancer --- Accepted by Cancer
 
 ## Contact
 wenjingu@umich.edu

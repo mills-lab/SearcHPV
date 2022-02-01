@@ -8,15 +8,14 @@ import os
 #fq2: raw sequencing data, fastq file
 #out_dir: output directory for searcHPV
 #virRef: virus reference genome
-def assemble(fq1, fq2, out_dir,virRef):
+#window: the length of region searching for informative reads, default=300
+def assemble(fq1, fq2, out_dir,virRef,gz,window):
     bam = f'{out_dir}/alignment/alignment.RG.indelre.mkdup.sort.bam'
-    fusionRes = f'{out_dir}/call_fusion/all.filtered.clustered.result'
     check_file(bam)
-    check_file(fusionRes)
     assemble_out_dir = f'{out_dir}/assemble/'
     mkdir(assemble_out_dir)
-    extract_read_name(bam,fusionRes,assemble_out_dir,virRef)
-    script_read_seq = extract_read_seq(assemble_out_dir,fq1,fq2)
+    extract_read_name(bam,out_dir,virRef,window)
+    script_read_seq = extract_read_seq(assemble_out_dir,fq1,fq2,gz)
     os.system(f'chmod +x {script_read_seq}')
     subprocess.call(script_read_seq)
     

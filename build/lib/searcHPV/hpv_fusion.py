@@ -9,8 +9,11 @@ from searcHPV.selection_contig_call_virus_insertion import *
 #virRef: virus reference genome
 #out_dir: output directory for seacHPV
 def hpv_fusion(humRef,virRef,out_dir):
+    script_map = mapToRef(out_dir)
     script_mapHg = mapToHgRef(out_dir,humRef)
     script_mapVir = mapToVirRef(out_dir,virRef)
+    os.system(f'chmod +x {script_map}')
+    subprocess.call(script_map)
     os.system(f'chmod +x {script_mapHg}')
     subprocess.call(script_mapHg)
     os.system(f'chmod +x {script_mapVir}')
