@@ -3,9 +3,10 @@ channels:
   - bioconda
   - defaults
   - r
+  - conda-forge
 dependencies:
   - python=3.7.3
-  - samtools=1.5
+  - samtools=1.9
   - bwa=0.7.15
   - java-jdk=8.0
   - gatk=3.8
@@ -14,7 +15,8 @@ dependencies:
   - cap3=10.2011
   - pysam=0.15.3
   - pandas=1.2.4
-  - pip
+  - pip=22.3.1
   - pip:
     - argparse
     - searcHPV
+
